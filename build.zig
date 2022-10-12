@@ -2,6 +2,8 @@ const std = @import("std");
 const builtin = std.builtin;
 const Builder = std.build.Builder;
 
+var framework_dir: ?[]u8 = null;
+
 fn sdkPath(comptime suffix: []const u8) []const u8 {
     if (suffix[0] != '/') @compileError("relToPath requires an absolute path!");
     return comptime blk: {
@@ -28,6 +30,8 @@ pub fn makeLib(b: *Builder, mode: builtin.Mode, target: std.zig.CrossTarget) *st
 
     lib.linkLibC();
     if (lib.target.isDarwin()) {
+        const frameworks_path = macosFrameworksDir(b) catch unreachable;
+        lib.addFrameworkPath(frameworks_path);
         lib.linkFramework("AppKit");
     } else if (lib.target.isWindows()) {
         lib.linkSystemLibrary("shell32");
@@ -42,6 +46,19 @@ pub fn makeLib(b: *Builder, mode: builtin.Mode, target: std.zig.CrossTarget) *st
     }
 
     return lib;
+}
+
+/// helper function to get SDK path on Mac
+fn macosFrameworksDir(b: *Builder) ![]u8 {
+    if (framework_dir) |dir| return dir;
+
+    var str = try b.exec(&[_][]const u8{ "xcrun", "--show-sdk-path" });
+    const strip_newline = std.mem.lastIndexOf(u8, str, "\n");
+    if (strip_newline) |index| {
+        str = str[0..index];
+    }
+    framework_dir = try std.mem.concat(b.allocator, u8, &[_][]const u8{ str, "/System/Library/Frameworks" });
+    return framework_dir.?;
 }
 
 pub fn getPackage(name: []const u8) std.build.Pkg {
