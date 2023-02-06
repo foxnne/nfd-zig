@@ -1,6 +1,6 @@
 const std = @import("std");
 const builtin = std.builtin;
-const Builder = std.build.Builder;
+const Builder = std.Build.Builder;
 
 var framework_dir: ?[]u8 = null;
 
@@ -12,10 +12,13 @@ fn sdkPath(comptime suffix: []const u8) []const u8 {
     };
 }
 
-pub fn makeLib(b: *Builder, mode: builtin.Mode, target: std.zig.CrossTarget) *std.build.LibExeObjStep {
-    const lib = b.addStaticLibrary("nfd", sdkPath("/src/lib.zig"));
-    lib.setBuildMode(mode);
-    lib.setTarget(target);
+pub fn makeLib(b: *std.Build, target: std.zig.CrossTarget, optimize: builtin.OptimizeMode) *std.build.LibExeObjStep {
+    const lib = b.addStaticLibrary(.{
+        .name = "nfd",
+        .root_source_file = .{ .path = sdkPath("/src/lib.zig") },
+        .target = target,
+        .optimize = optimize,
+    });
 
     const cflags = [_][]const u8{"-Wall"};
     lib.addIncludePath(sdkPath("/nativefiledialog/src/include"));
@@ -69,13 +72,17 @@ pub fn getPackage(name: []const u8) std.build.Pkg {
 }
 
 pub fn build(b: *Builder) void {
-    const mode = b.standardReleaseOptions();
     const target = b.standardTargetOptions(.{});
-    const lib = makeLib(b, mode, target);
+    const optimize = b.standardOptimizeOption(.{});
+    const lib = makeLib(b, target, optimize);
     lib.install();
 
-    var demo = b.addExecutable("demo", "src/demo.zig");
-    demo.setBuildMode(mode);
+    var demo = b.addExecutable(.{
+        .name = "demo",
+        .root_source_file = .{ .path = "src/demo.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
     demo.addPackage(getPackage("nfd"));
     demo.linkLibrary(lib);
     demo.install();
