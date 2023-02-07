@@ -1,6 +1,5 @@
 const std = @import("std");
 const builtin = std.builtin;
-const Builder = std.Build.Builder;
 
 var framework_dir: ?[]u8 = null;
 
@@ -12,7 +11,7 @@ fn sdkPath(comptime suffix: []const u8) []const u8 {
     };
 }
 
-pub fn makeLib(b: *std.Build, target: std.zig.CrossTarget, optimize: builtin.OptimizeMode) *std.build.LibExeObjStep {
+pub fn makeLib(b: *std.Build, target: std.zig.CrossTarget, optimize: builtin.OptimizeMode) *std.Build.CompileStep {
     const lib = b.addStaticLibrary(.{
         .name = "nfd",
         .root_source_file = .{ .path = sdkPath("/src/lib.zig") },
@@ -52,7 +51,7 @@ pub fn makeLib(b: *std.Build, target: std.zig.CrossTarget, optimize: builtin.Opt
 }
 
 /// helper function to get SDK path on Mac
-fn macosFrameworksDir(b: *Builder) ![]u8 {
+fn macosFrameworksDir(b: *std.Build) ![]u8 {
     if (framework_dir) |dir| return dir;
 
     var str = try b.exec(&[_][]const u8{ "xcrun", "--show-sdk-path" });
@@ -64,14 +63,11 @@ fn macosFrameworksDir(b: *Builder) ![]u8 {
     return framework_dir.?;
 }
 
-pub fn getPackage(name: []const u8) std.build.Pkg {
-    return std.build.Pkg{
-        .name = name,
-        .source = .{ .path = sdkPath("/src/lib.zig") },
-    };
+pub fn getModule(b: *std.Build) *std.build.Module {
+    return b.createModule(.{ .source_file = .{ .path = sdkPath("/src/lib.zig") } });
 }
 
-pub fn build(b: *Builder) void {
+pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const lib = makeLib(b, target, optimize);
@@ -83,7 +79,7 @@ pub fn build(b: *Builder) void {
         .target = target,
         .optimize = optimize,
     });
-    demo.addPackage(getPackage("nfd"));
+    demo.addPackage(getModule(b));
     demo.linkLibrary(lib);
     demo.install();
 
