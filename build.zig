@@ -54,7 +54,7 @@ pub fn makeLib(b: *std.Build, target: std.zig.CrossTarget, optimize: builtin.Opt
 fn macosFrameworksDir(b: *std.Build) ![]u8 {
     if (framework_dir) |dir| return dir;
 
-    var str = try b.exec(&[_][]const u8{ "xcrun", "--show-sdk-path" });
+    var str = b.exec(&[_][]const u8{ "xcrun", "--show-sdk-path" });
     const strip_newline = std.mem.lastIndexOf(u8, str, "\n");
     if (strip_newline) |index| {
         str = str[0..index];
@@ -79,7 +79,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    demo.addPackage(getModule(b));
+    demo.addModule("nfd", getModule(b));
     demo.linkLibrary(lib);
     demo.install();
 
