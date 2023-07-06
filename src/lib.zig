@@ -2,7 +2,7 @@ const std = @import("std");
 const c = @import("c.zig");
 const log = std.log.scoped(.nfd);
 
-pub const Error = error {
+pub const Error = error{
     NfdError,
 };
 
@@ -20,10 +20,7 @@ pub fn openFileDialog(filter: ?[:0]const u8, default_path: ?[:0]const u8) Error!
     var out_path: [*c]u8 = null;
 
     // allocates using malloc
-    const result = c.NFD_OpenDialog(
-        if (filter != null) filter.?.ptr else null, 
-        if (default_path != null) default_path.?.ptr else null,
-        &out_path);
+    const result = c.NFD_OpenDialog(if (filter != null) filter.?.ptr else null, if (default_path != null) default_path.?.ptr else null, &out_path);
 
     return switch (result) {
         c.NFD_OKAY => if (out_path == null) null else std.mem.sliceTo(out_path, 0),
@@ -37,10 +34,7 @@ pub fn saveFileDialog(filter: ?[:0]const u8, default_path: ?[:0]const u8) Error!
     var out_path: [*c]u8 = null;
 
     // allocates using malloc
-    const result = c.NFD_SaveDialog(
-        if (filter != null) filter.?.ptr else null, 
-        if (default_path != null) default_path.?.ptr else null,
-        &out_path);
+    const result = c.NFD_SaveDialog(if (filter != null) filter.?.ptr else null, if (default_path != null) default_path.?.ptr else null, &out_path);
 
     return switch (result) {
         c.NFD_OKAY => if (out_path == null) null else std.mem.sliceTo(out_path, 0),
@@ -54,9 +48,7 @@ pub fn openFolderDialog(default_path: ?[:0]const u8) Error!?[:0]const u8 {
     var out_path: [*c]u8 = null;
 
     // allocates using malloc
-    const result = c.NFD_PickFolder(
-        if (default_path != null) default_path.?.ptr else null,
-        &out_path);
+    const result = c.NFD_PickFolder(if (default_path != null) default_path.?.ptr else null, &out_path);
 
     return switch (result) {
         c.NFD_OKAY => if (out_path == null) null else std.mem.sliceTo(out_path, 0),
@@ -66,5 +58,5 @@ pub fn openFolderDialog(default_path: ?[:0]const u8) Error!?[:0]const u8 {
 }
 
 pub fn freePath(path: []const u8) void {
-    std.c.free(@intToPtr(*anyopaque, @ptrToInt(path.ptr)));
+    std.c.free(@as(*anyopaque, @ptrFromInt(@intFromPtr(path.ptr))));
 }
