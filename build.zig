@@ -20,20 +20,20 @@ pub fn makeLib(b: *std.Build, target: std.zig.CrossTarget, optimize: builtin.Opt
     });
 
     const cflags = [_][]const u8{"-Wall"};
-    lib.addIncludePath(sdkPath("/nativefiledialog/src/include"));
-    lib.addCSourceFile(sdkPath("/nativefiledialog/src/nfd_common.c"), &cflags);
+    lib.addIncludePath(.{ .path = sdkPath("/nativefiledialog/src/include") });
+    lib.addCSourceFile(.{ .file = .{ .path = sdkPath("/nativefiledialog/src/nfd_common.c") }, .flags = &cflags });
     if (lib.target.isDarwin()) {
-        lib.addCSourceFile(sdkPath("/nativefiledialog/src/nfd_cocoa.m"), &cflags);
+        lib.addCSourceFile(.{ .file = .{ .path = sdkPath("/nativefiledialog/src/nfd_cocoa.m") }, .flags = &cflags });
     } else if (lib.target.isWindows()) {
-        lib.addCSourceFile(sdkPath("/nativefiledialog/src/nfd_win.cpp"), &cflags);
+        lib.addCSourceFile(.{ .file = .{ .path = sdkPath("/nativefiledialog/src/nfd_win.cpp") }, .flags = &cflags });
     } else {
-        lib.addCSourceFile(sdkPath("/nativefiledialog/src/nfd_gtk.c"), &cflags);
+        lib.addCSourceFile(.{ .file = .{ .path = sdkPath("/nativefiledialog/src/nfd_gtk.c") }, .flags = &cflags });
     }
 
     lib.linkLibC();
     if (lib.target.isDarwin()) {
         const frameworks_path = macosFrameworksDir(b) catch unreachable;
-        lib.addFrameworkPath(frameworks_path);
+        lib.addFrameworkPath(.{ .path = frameworks_path });
         lib.linkFramework("AppKit");
     } else if (lib.target.isWindows()) {
         lib.linkSystemLibrary("shell32");
